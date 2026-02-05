@@ -355,4 +355,4 @@ $bannerVer = get_setting($pdo, 'banner_version') ?? time();
     });
     </script>
 </body>
-</html>
+</html>aasdasd
