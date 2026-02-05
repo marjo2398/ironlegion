@@ -8,8 +8,7 @@ setcookie('chat_last_visit', date('Y-m-d H:i:s'), time() + (86400 * 30), "/");
 $self = basename(__FILE__);
 
 // --- OBSŁUGA JĘZYKA ---
-if (isset($_GET['lang']) && in_array($_GET['lang'], ['pl', 'en', 'ru'])) $_SESSION['lang'] = $_GET['lang'];
-$lang = $_SESSION['lang'] ?? 'en';
+$lang = set_language(['pl', 'en', 'ru'], 'en');
 
 // --- KONFIGURACJA ---
 $uploadDir = 'uploads/';
@@ -137,81 +136,66 @@ $bannerVer = get_setting($pdo, 'banner_version') ?? time();
 $currentUser = $_SESSION['chat_username'] ?? null;
 $currentUserId = $_SESSION['chat_user_id'] ?? 0;
 ?>
-<!DOCTYPE html>
-<html lang="<?= $lang ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Iron Legion CHAT</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; overscroll-behavior: none; }
-        .msg-bubble { max-width: 85%; word-break: break-word; position: relative; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 2px; }
-        .link-highlight { color: #eab308; text-decoration: underline; }
-        .mobile-h-screen { height: 100vh; height: 100dvh; }
-        
-        .chat-thumb {
-            width: 100px; 
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #4b5563;
-            transition: transform 0.2s, border-color 0.2s;
-            cursor: pointer;
-        }
-        .chat-thumb:hover { border-color: #eab308; opacity: 0.9; }
-
-        .emoji-btn { font-size: 1.4rem; padding: 6px; cursor: pointer; transition: transform 0.1s; }
-        .emoji-btn:hover { transform: scale(1.2); }
-
-        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center; }
-        #lightbox img { max-width: 95%; max-height: 95vh; border-radius: 8px; box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
-        
-        /* Styl menu tłumaczenia */
-        .trans-menu { z-index: 50; min-width: 100px; }
-        
-        /* Styl okienka z wynikiem */
-        .trans-result-box { 
-            position: absolute;
-            top: 0;
-            z-index: 40;
-            font-size: 0.8rem; 
-            background: #1f2937; 
-            border: 1px solid #eab308; 
-            padding: 8px; 
-            border-radius: 6px; 
-            color: #d1d5db;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            min-width: 180px;
-            max-width: 60vw;
-        }
-        
-        /* Pozycjonowanie na Desktop (md) */
-        @media (min-width: 768px) {
-            .trans-result-box.left-side { right: 100%; margin-right: 12px; }
-            .trans-result-box.right-side { left: 100%; margin-left: 12px; }
-        }
-
-        /* Pozycjonowanie na Mobile (default) */
-        @media (max-width: 767px) {
-            .trans-result-box {
-                position: relative;
-                width: 100%;
-                max-width: 100%;
-                margin-top: 4px;
-                right: auto !important;
-                left: auto !important;
-                border-color: #4b5563;
-            }
-        }
-    </style>
-</head>
-<body class="mobile-h-screen flex flex-col overflow-hidden">
+<?php
+$pageTitle = 'Iron Legion CHAT';
+$pageStyles = <<<CSS
+body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; overscroll-behavior: none; }
+.msg-bubble { max-width: 85%; word-break: break-word; position: relative; }
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 2px; }
+.link-highlight { color: #eab308; text-decoration: underline; }
+.mobile-h-screen { height: 100vh; height: 100dvh; }
+.chat-thumb {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #4b5563;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+}
+.chat-thumb:hover { border-color: #eab308; opacity: 0.9; }
+.emoji-btn { font-size: 1.4rem; padding: 6px; cursor: pointer; transition: transform 0.1s; }
+.emoji-btn:hover { transform: scale(1.2); }
+#lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center; }
+#lightbox img { max-width: 95%; max-height: 95vh; border-radius: 8px; box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+.trans-menu { z-index: 50; min-width: 100px; }
+.trans-result-box {
+    position: absolute;
+    top: 0;
+    z-index: 40;
+    font-size: 0.8rem;
+    background: #1f2937;
+    border: 1px solid #eab308;
+    padding: 8px;
+    border-radius: 6px;
+    color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    min-width: 180px;
+    max-width: 60vw;
+}
+@media (min-width: 768px) {
+    .trans-result-box.left-side { right: 100%; margin-right: 12px; }
+    .trans-result-box.right-side { left: 100%; margin-left: 12px; }
+}
+@media (max-width: 767px) {
+    .trans-result-box {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        margin-top: 4px;
+        right: auto !important;
+        left: auto !important;
+        border-color: #4b5563;
+    }
+}
+CSS;
+$bodyClass = 'mobile-h-screen flex flex-col overflow-hidden';
+$viewport = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+$pageHeadExtra = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">';
+require_once 'partials/header.php';
+?>
 
     <!-- Lightbox -->
     <div id="lightbox" onclick="closeLightbox()">
