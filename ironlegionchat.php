@@ -8,8 +8,7 @@ setcookie('chat_last_visit', date('Y-m-d H:i:s'), time() + (86400 * 30), "/");
 $self = basename(__FILE__);
 
 // --- OBSŁUGA JĘZYKA ---
-if (isset($_GET['lang']) && in_array($_GET['lang'], ['pl', 'en', 'ru'])) $_SESSION['lang'] = $_GET['lang'];
-$lang = $_SESSION['lang'] ?? 'en';
+$lang = set_language(['pl', 'en', 'ru'], 'en');
 
 // --- KONFIGURACJA ---
 $uploadDir = 'uploads/';

@@ -1,16 +1,8 @@
 <?php
 // rules.php – Updated for V19 Logic (Hard Drop + Freeze)
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-// language detection
-if (isset($_GET['lang'])) {
-    $lang = $_GET['lang'];
-    if (!in_array($lang, ['pl','en','ru'], true)) $lang = 'pl';
-    $_SESSION['lang'] = $lang;
-} else {
-    $lang = $_SESSION['lang'] ?? 'pl';
-}
+require_once 'functions.php';
+$lang = set_language(['pl', 'en', 'ru'], 'pl');
 
 $rules = [
 

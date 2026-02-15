@@ -538,45 +538,36 @@ function copySessionLoot(btn, textToCopy) {
 }
 
 function runCopyCommand(text, btnElement) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
+    const updateButtonState = () => {
+        if (!btnElement) return;
+        const originalContent = btnElement.innerHTML;
+        const originalClass = btnElement.className;
 
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
+        btnElement.innerHTML = "✅";
 
-    try {
-        document.execCommand('copy');
-        showToast();
-
-        if (btnElement) {
-            const originalContent = btnElement.innerHTML;
-            const originalClass = btnElement.className;
-
-            btnElement.innerHTML = "✅";
-
-            if (btnElement.id === 'copy-btn') {
-                btnElement.classList.remove('bg-red-600', 'hover:bg-red-500');
-                btnElement.classList.add('bg-green-600', 'scale-105');
-            } else {
-                btnElement.classList.remove('text-indigo-400');
-                btnElement.classList.add('text-green-500', 'scale-125');
-            }
-
-            setTimeout(() => {
-                btnElement.innerHTML = originalContent;
-                btnElement.className = originalClass;
-            }, 1000);
+        if (btnElement.id === 'copy-btn') {
+            btnElement.classList.remove('bg-red-600', 'hover:bg-red-500');
+            btnElement.classList.add('bg-green-600', 'scale-105');
+        } else {
+            btnElement.classList.remove('text-indigo-400');
+            btnElement.classList.add('text-green-500', 'scale-125');
         }
 
-    } catch (err) {
-        console.error('Błąd kopiowania', err);
-        alert("Nie udało się skopiować automatycznie.");
-    }
+        setTimeout(() => {
+            btnElement.innerHTML = originalContent;
+            btnElement.className = originalClass;
+        }, 1000);
+    };
 
-    document.body.removeChild(textArea);
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            showToast();
+            updateButtonState();
+        })
+        .catch((err) => {
+            console.error('Błąd kopiowania', err);
+            alert("Nie udało się skopiować automatycznie.");
+        });
 }
 
 /* ===== TOAST ===== */
