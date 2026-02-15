@@ -535,8 +535,9 @@ function copySessionLoot(btn, textToCopy) {
         return;
     }
     const cleanedText = textToCopy
-        .replace(/\((?:Suggested|auto)\)/gi, '')
-        .replace(/(\r?\n){3,}/g, (newLines) => newLines.startsWith('\r\n') ? '\r\n\r\n' : '\n\n');
+        .replace(/\s*\((?:Suggested|auto)\)\s*/gi, ' ')
+        .replace(/[ \t]+\n/g, '\n')
+        .trim();
 
     runCopyCommand(cleanedText, btn);
 }
