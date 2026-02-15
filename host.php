@@ -544,6 +544,10 @@ function copySessionLoot(btn, textToCopy) {
 }
 
 async function runCopyCommand(text, btnElement) {
+    const textForClipboard = String(text ?? '')
+        .replace(/\r\n|\r|\u2028|\u2029/g, '\n')
+        .replace(/\\r\\n|\\n|\\r/g, '\n');
+
     const updateButtonState = () => {
         if (!btnElement) return;
         const originalContent = btnElement.innerHTML;
@@ -567,7 +571,7 @@ async function runCopyCommand(text, btnElement) {
 
     const fallbackCopy = () => {
         const textarea = document.createElement('textarea');
-        textarea.value = text;
+        textarea.value = textForClipboard;
         textarea.setAttribute('readonly', '');
         textarea.style.position = 'absolute';
         textarea.style.left = '-9999px';
@@ -586,7 +590,7 @@ async function runCopyCommand(text, btnElement) {
 
     try {
         if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
+            await navigator.clipboard.writeText(textForClipboard);
         } else {
             fallbackCopy();
         }
