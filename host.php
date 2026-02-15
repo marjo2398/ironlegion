@@ -535,19 +535,14 @@ function copySessionLoot(btn, textToCopy) {
         return;
     }
     const cleanedText = textToCopy
-        .replace(/\((?:Suggested|auto)\)/gi, '')
-        .replace(/\r\n|\r|\u2028|\u2029/g, '\n')
-        .replace(/\\r\\n|\\n|\\r/g, '\n')
-        .replace(/\n{3,}/g, '\n\n');
+        .replace(/\s*\((?:Suggested|auto)\)\s*/gi, ' ')
+        .replace(/[ \t]+\n/g, '\n')
+        .trim();
 
     runCopyCommand(cleanedText, btn);
 }
 
 async function runCopyCommand(text, btnElement) {
-    const textForClipboard = String(text ?? '')
-        .replace(/\r\n|\r|\u2028|\u2029/g, '\n')
-        .replace(/\\r\\n|\\n|\\r/g, '\n');
-
     const updateButtonState = () => {
         if (!btnElement) return;
         const originalContent = btnElement.innerHTML;
@@ -571,7 +566,7 @@ async function runCopyCommand(text, btnElement) {
 
     const fallbackCopy = () => {
         const textarea = document.createElement('textarea');
-        textarea.value = textForClipboard;
+        textarea.value = text;
         textarea.setAttribute('readonly', '');
         textarea.style.position = 'absolute';
         textarea.style.left = '-9999px';
@@ -590,7 +585,7 @@ async function runCopyCommand(text, btnElement) {
 
     try {
         if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(textForClipboard);
+            await navigator.clipboard.writeText(text);
         } else {
             fallbackCopy();
         }
