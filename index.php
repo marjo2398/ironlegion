@@ -162,33 +162,28 @@ if (!empty($allSessionIds)) {
 
 $bannerVer = get_setting($pdo, 'banner_version') ?? time();
 ?>
-<!DOCTYPE html>
-<html lang="<?= $lang ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= t('title') ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; }
-        .card { background-color: #1f2937; border: 1px solid #374151; }
-        table { width: 100%; border-collapse: collapse; }
-        .table-header { background-color: #111827; color: #9ca3af; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; cursor: pointer; user-select: none; }
-        .table-header:hover { background-color: #374151; color: white; }
-        .table-row { border-bottom: 1px solid #374151; }
-        .table-row:last-child { border-bottom: none; }
-        td, th { vertical-align: middle; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-        th.sort-asc::after { content: " ▲"; font-size: 0.7em; }
-        th.sort-desc::after { content: " ▼"; font-size: 0.7em; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
-        .notify-badge { animation: pulse-red 2s infinite; }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col">
+<?php
+$pageTitle = t('title');
+$pageStyles = <<<CSS
+body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; }
+.card { background-color: #1f2937; border: 1px solid #374151; }
+table { width: 100%; border-collapse: collapse; }
+.table-header { background-color: #111827; color: #9ca3af; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; cursor: pointer; user-select: none; }
+.table-header:hover { background-color: #374151; color: white; }
+.table-row { border-bottom: 1px solid #374151; }
+.table-row:last-child { border-bottom: none; }
+td, th { vertical-align: middle; }
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+th.sort-asc::after { content: " ▲"; font-size: 0.7em; }
+th.sort-desc::after { content: " ▼"; font-size: 0.7em; }
+@keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+.notify-badge { animation: pulse-red 2s infinite; }
+CSS;
+$bodyClass = 'min-h-screen flex flex-col';
+require_once 'partials/header.php';
+?>
 
     <div class="w-full bg-black">
         <img src="icons/baner.png?v=<?= $bannerVer ?>" alt="Banner" class="block w-full shadow-2xl" style="width: 100%; height: auto; display: block;">

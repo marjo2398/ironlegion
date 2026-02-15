@@ -1,16 +1,8 @@
 <?php
 // rules.php – Updated for V19 Logic (Hard Drop + Freeze)
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-// language detection
-if (isset($_GET['lang'])) {
-    $lang = $_GET['lang'];
-    if (!in_array($lang, ['pl','en','ru'], true)) $lang = 'pl';
-    $_SESSION['lang'] = $lang;
-} else {
-    $lang = $_SESSION['lang'] ?? 'pl';
-}
+require_once 'functions.php';
+$lang = set_language(['pl', 'en', 'ru'], 'pl');
 
 $rules = [
 
@@ -60,53 +52,46 @@ $rules = [
 
 $doc = $rules[$lang];
 ?>
-<!doctype html>
-<html lang="<?= htmlspecialchars($lang) ?>">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= htmlspecialchars($doc['title']) ?></title>
-<style>
-    body{background:#0f1113;color:#e7e9eb;font-family:'Inter', sans-serif;margin:0;padding:20px}
-    .wrap{max-width:900px;margin:0 auto}
-    .card{background:#1f2937;padding:24px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.5); border: 1px solid #374151;}
-    h1{margin:0 0 16px;font-size:28px;text-align:center; color: #eab308; font-weight: bold;}
-    p.intro {text-align:center;color:#9ca3af; margin-bottom: 24px;}
-    ul {list-style: none; padding: 0;}
-    li {
-        background: #111827;
-        margin-bottom: 12px;
-        padding: 16px;
-        border-radius: 8px;
-        border-left: 4px solid #4b5563;
-        font-size: 16px;
-        line-height: 1.5;
-    }
-    li strong { color: #fff; }
-    /* Kolorowanie specyficznych zasad */
-    li:nth-child(2) { border-left-color: #3b82f6; } /* Zamrażanie - Niebieski */
-    li:nth-child(3) { border-left-color: #22c55e; } /* Awans - Zielony */
-    li:nth-child(4) { border-left-color: #ef4444; } /* Reset - Czerwony */
-
-    .lang{color:#6b7280;text-decoration:none;margin-right:12px;font-weight:bold; font-size:14px;}
-    .lang:hover, .lang.active {color:#eab308;}
-    
-    .back-btn {
-        display:inline-block;
-        padding:8px 16px;
-        background:#374151;
-        color:#fff;
-        border-radius:6px;
-        text-decoration:none;
-        font-weight: bold;
-        transition: background 0.2s;
-    }
-    .back-btn:hover { background: #4b5563; }
-
-    .back-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-</style>
-</head>
-<body>
+<?php
+$pageTitle = $doc['title'];
+$pageStyles = <<<CSS
+body{background:#0f1113;color:#e7e9eb;font-family:'Inter', sans-serif;margin:0;padding:20px}
+.wrap{max-width:900px;margin:0 auto}
+.card{background:#1f2937;padding:24px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.5); border: 1px solid #374151;}
+h1{margin:0 0 16px;font-size:28px;text-align:center; color: #eab308; font-weight: bold;}
+p.intro {text-align:center;color:#9ca3af; margin-bottom: 24px;}
+ul {list-style: none; padding: 0;}
+li {
+    background: #111827;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #4b5563;
+    font-size: 16px;
+    line-height: 1.5;
+}
+li strong { color: #fff; }
+li:nth-child(2) { border-left-color: #3b82f6; }
+li:nth-child(3) { border-left-color: #22c55e; }
+li:nth-child(4) { border-left-color: #ef4444; }
+.lang{color:#6b7280;text-decoration:none;margin-right:12px;font-weight:bold; font-size:14px;}
+.lang:hover, .lang.active {color:#eab308;}
+.back-btn {
+    display:inline-block;
+    padding:8px 16px;
+    background:#374151;
+    color:#fff;
+    border-radius:6px;
+    text-decoration:none;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+.back-btn:hover { background: #4b5563; }
+.back-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+CSS;
+$viewport = 'width=device-width,initial-scale=1';
+require_once 'partials/header.php';
+?>
 <div class="wrap">
 
     <div class="back-row">

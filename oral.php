@@ -142,22 +142,17 @@ foreach ($matrixQuery as $row) {
 usort($items, function($a, $b) use ($itemGlobalCounts) { return $itemGlobalCounts[$b['id']] - $itemGlobalCounts[$a['id']]; });
 arsort($lootTotals);
 ?>
-<!DOCTYPE html>
-<html lang="<?= $lang ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics - Iron Legion</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #111827; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .sidebar-scroll { scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    </style>
-</head>
-<body class="flex flex-col md:flex-row min-h-screen">
+<?php
+$pageTitle = 'Analytics - Iron Legion';
+$pageStyles = <<<CSS
+body { background-color: #111827; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+.sidebar-scroll { scrollbar-width: thin; scrollbar-color: #475569 #1e293b; }
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+CSS;
+$bodyClass = 'flex flex-col md:flex-row min-h-screen';
+require_once 'partials/header.php';
+?>
 
     <!-- SIDEBAR (Sessions List) -->
     <aside class="w-full md:w-80 bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col h-auto max-h-[40vh] md:max-h-screen md:h-screen shrink-0 z-20">
