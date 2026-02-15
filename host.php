@@ -38,23 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_token'])) {
 
 if (!isset($_SESSION['is_host']) || $_SESSION['is_host'] !== true) {
     ?>
-    <?php
-    $pageTitle = t('login_title');
-    $pageStyles = "body { font-family: 'Inter', sans-serif; background-color: #111827; color: white; }";
-    $bodyClass = 'min-h-screen flex items-center justify-center p-4';
-    require_once 'partials/header.php';
-    ?>
-    <div class="bg-gray-800 border border-gray-700 p-8 rounded-lg shadow-2xl max-w-sm w-full">
-        <h1 class="text-2xl font-bold text-yellow-500 mb-6 text-center"><?= t('login_title') ?></h1>
-        <?php if($error): ?><div class="bg-red-900/50 text-red-200 p-3 text-sm rounded mb-4 text-center border border-red-900 font-bold">⚠️ <?= $error ?></div><?php endif; ?>
-        <form method="POST">
-            <input type="password" name="login_token" placeholder="<?= t('token') ?>" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white mb-6 focus:border-yellow-500" autofocus>
-            <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 rounded"><?= t('enter') ?></button>
-        </form>
-        <a href="index.php" class="block text-center text-gray-500 text-xs mt-6 hover:text-white underline"><?= t('back') ?></a>
-    </div>
-    </body>
-    </html>
+    <!DOCTYPE html><html lang="<?= $lang ?>"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title><?= t('login_title') ?></title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', sans-serif; background-color: #111827; color: white; }</style></head><body class="min-h-screen flex items-center justify-center p-4"><div class="bg-gray-800 border border-gray-700 p-8 rounded-lg shadow-2xl max-w-sm w-full"><h1 class="text-2xl font-bold text-yellow-500 mb-6 text-center"><?= t('login_title') ?></h1><?php if($error): ?><div class="bg-red-900/50 text-red-200 p-3 text-sm rounded mb-4 text-center border border-red-900 font-bold">⚠️ <?= $error ?></div><?php endif; ?><form method="POST"><input type="password" name="login_token" placeholder="<?= t('token') ?>" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white mb-6 focus:border-yellow-500" autofocus><button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 rounded"><?= t('enter') ?></button></form><a href="index.php" class="block text-center text-gray-500 text-xs mt-6 hover:text-white underline"><?= t('back') ?></a></div></body></html>
     <?php exit;
 }
 
@@ -137,20 +121,26 @@ try {
 } catch(Exception $e) { /* Tabela może nie istnieć jeszcze */ }
 
 ?>
-<?php
-$pageTitle = t('host_panel');
-$pageStyles = <<<CSS
-body { font-family: 'Inter', sans-serif; background-color: #111827; color: white; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: #eab308; box-shadow: 0 0 0 1px #eab308; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #1f2937; }
-::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-@keyframes flashGreen { 0% { background-color: #16a34a; } 100% { background-color: #dc2626; } }
-.copied-anim { animation: flashGreen 1s ease-out; }
-CSS;
-$bodyClass = 'min-h-screen flex flex-col';
-require_once 'partials/header.php';
-?>
+<!DOCTYPE html>
+<html lang="<?= $lang ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= t('host_panel') ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: white; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #eab308; box-shadow: 0 0 0 1px #eab308; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        /* Animacja dla przycisku copy */
+        @keyframes flashGreen { 0% { background-color: #16a34a; } 100% { background-color: #dc2626; } }
+        .copied-anim { animation: flashGreen 1s ease-out; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
 
     <nav class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-50 shadow-lg">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
