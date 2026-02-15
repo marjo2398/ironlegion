@@ -514,7 +514,7 @@ function copyLootToClipboard() {
         let playerNick = "---";
         if (select) {
             let rawText = select.options[select.selectedIndex].text;
-            playerNick = rawText.replace('(Suggested)', '') .replace('(auto)', '').trim();
+            playerNick = rawText.replace(/\s*\((?:Suggested|auto)\)\s*/gi, ' ').trim();
         }
 
         lines.push(itemName + " - " + playerNick);
@@ -534,10 +534,14 @@ function copySessionLoot(btn, textToCopy) {
         alert('Ta sesja nie ma dropu!');
         return;
     }
-    runCopyCommand(textToCopy, btn);
+    const cleanedText = textToCopy
+        .replace(/\((?:Suggested|auto)\)/gi, '')
+        .replace(/(\r?\n){3,}/g, (newLines) => newLines.startsWith('\r\n') ? '\r\n\r\n' : '\n\n');
+
+    runCopyCommand(cleanedText, btn);
 }
 
-function runCopyCommand(text, btnElement) {
+async function runCopyCommand(text, btnElement) {
     const updateButtonState = () => {
         if (!btnElement) return;
         const originalContent = btnElement.innerHTML;
@@ -559,15 +563,44 @@ function runCopyCommand(text, btnElement) {
         }, 1000);
     };
 
-    navigator.clipboard.writeText(text)
-        .then(() => {
+    const fallbackCopy = () => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+
+        if (!copied) {
+            throw new Error('Fallback copy failed');
+        }
+    };
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            fallbackCopy();
+        }
+
+        showToast();
+        updateButtonState();
+    } catch (err) {
+        try {
+            fallbackCopy();
             showToast();
             updateButtonState();
-        })
-        .catch((err) => {
-            console.error('Błąd kopiowania', err);
+        } catch (fallbackErr) {
+            console.error('Błąd kopiowania', err, fallbackErr);
             alert("Nie udało się skopiować automatycznie.");
-        });
+        }
+    }
 }
 
 /* ===== TOAST ===== */
