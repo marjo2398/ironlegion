@@ -22,4 +22,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          passive: true
+          timeout: 60000
+          dangerous-clean-slate: true
           server-dir: ${{ steps.path.outputs.dir }}
