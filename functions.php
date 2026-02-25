@@ -44,6 +44,25 @@ function ensure_db_structure($pdo) {
             $pdo->exec("ALTER TABLE players ADD COLUMN is_out TINYINT DEFAULT 0");
         } catch (Exception $e) { }
     }
+
+    // NEW: Item Exclusions Table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS item_exclusions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        player_id INT NOT NULL,
+        item_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_exclusion (player_id, item_id),
+        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+        FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+    )");
+
+    // NEW: Add is_excluded column to cache table if missing
+    try {
+        $columns = $pdo->query("SHOW COLUMNS FROM item_queue_positions LIKE 'is_excluded'")->fetchAll();
+        if (empty($columns)) {
+            $pdo->exec("ALTER TABLE item_queue_positions ADD COLUMN is_excluded TINYINT DEFAULT 0");
+        }
+    } catch (Exception $e) {}
 }
 ensure_db_structure($pdo);
 
@@ -86,6 +105,16 @@ function rebuild_all_queues($pdo): void
 
     $queues = [];
     foreach ($allItems as $iid) $queues[(int)$iid] = [];
+
+    // Pobierz wykluczenia
+    $exclusions = [];
+    try {
+        $stmt = $pdo->query("SELECT player_id, item_id FROM item_exclusions");
+        $exRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($exRows as $r) {
+            $exclusions[(int)$r['item_id']][(int)$r['player_id']] = true;
+        }
+    } catch (Exception $e) {}
 
     // 4. Symulacja Historii
     if (!empty($sessionIds)) {
@@ -171,6 +200,21 @@ function rebuild_all_queues($pdo): void
         
         $queue = array_unique($queue);
         $queue = array_values($queue); 
+
+        // ZASADA WYKLUCZENIA (Exclusions Logic)
+        if (isset($exclusions[$itemId])) {
+            $excludedInQueue = [];
+            $regularInQueue = [];
+            foreach ($queue as $pid) {
+                if (isset($exclusions[$itemId][$pid])) {
+                    $excludedInQueue[] = $pid;
+                } else {
+                    $regularInQueue[] = $pid;
+                }
+            }
+            // Scalanie: Najpierw zwykli, na końcu wykluczeni
+            $queue = array_merge($regularInQueue, $excludedInQueue);
+        }
     }
     unset($queue);
 
@@ -178,13 +222,14 @@ function rebuild_all_queues($pdo): void
     try {
         $pdo->beginTransaction();
         $pdo->exec("DELETE FROM item_queue_positions");
-        $stmtIns = $pdo->prepare("INSERT INTO item_queue_positions (item_id, player_id, position) VALUES (?, ?, ?)");
+        $stmtIns = $pdo->prepare("INSERT INTO item_queue_positions (item_id, player_id, position, is_excluded) VALUES (?, ?, ?, ?)");
         
         foreach ($queues as $itemId => $queue) {
             $pos = 1;
             foreach ($queue as $pid) {
                 if ($pid > 0) { 
-                    $stmtIns->execute([$itemId, $pid, $pos]);
+                    $isExcluded = isset($exclusions[$itemId][$pid]) ? 1 : 0;
+                    $stmtIns->execute([$itemId, $pid, $pos, $isExcluded]);
                     $pos++;
                 }
             }

@@ -16,7 +16,7 @@ while($row = $pStmt->fetch()) {
 }
 
 if ($items) {
-    $rows = $pdo->query("SELECT q.item_id, q.position, p.nick, p.id as pid FROM item_queue_positions q JOIN players p ON p.id = q.player_id ORDER BY q.item_id ASC, q.position ASC")->fetchAll();
+    $rows = $pdo->query("SELECT q.item_id, q.position, q.is_excluded, p.nick, p.id as pid FROM item_queue_positions q JOIN players p ON p.id = q.player_id ORDER BY q.item_id ASC, q.position ASC")->fetchAll();
     foreach ($rows as $r) $queuesByItem[$r['item_id']][] = $r;
 }
 
@@ -275,15 +275,15 @@ require_once 'partials/header.php';
                     </div>
                     <div class="p-0 max-h-[70vh] overflow-y-auto custom-scroll">
                         <ul class="divide-y divide-gray-700">
-                            <?php foreach($queue as $row): $isBanned = $playersBanned[$row['pid']] ?? 0; $delta = $deltas[$iid][$row['pid']] ?? 0; ?>
-                            <li class="px-4 py-2 text-sm flex items-center gap-2 <?= $row['position'] == 1 && !$isBanned ? 'bg-yellow-900/10' : '' ?> <?= $isBanned ? 'opacity-40 grayscale' : '' ?>">
+                            <?php foreach($queue as $row): $isBanned = $playersBanned[$row['pid']] ?? 0; $isExcluded = $row['is_excluded'] ?? 0; $delta = $deltas[$iid][$row['pid']] ?? 0; ?>
+                            <li class="px-4 py-2 text-sm flex items-center gap-2 <?= $row['position'] == 1 && !$isBanned && !$isExcluded ? 'bg-yellow-900/10' : '' ?> <?= $isBanned ? 'opacity-40 grayscale' : ($isExcluded ? 'opacity-50 italic' : '') ?>">
                                 <span class="text-gray-500 w-4"><?= $row['position'] ?>.</span>
                                 <div class="flex-grow flex items-center justify-between">
                                     <div class="flex items-center gap-2">
-                                        <?php if($row['position'] == 1 && !$isBanned): ?><span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span><span class="text-white font-bold"><?= htmlspecialchars($row['nick']) ?></span>
-                                        <?php else: ?><span class="w-2 h-2 rounded-full <?= $isBanned ? 'bg-red-900' : 'bg-gray-600' ?> shrink-0"></span><span class="<?= $isBanned ? 'text-gray-500 line-through' : 'text-gray-400' ?>"><?= htmlspecialchars($row['nick']) ?></span><?php endif; ?>
+                                        <?php if($row['position'] == 1 && !$isBanned && !$isExcluded): ?><span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span><span class="text-white font-bold"><?= htmlspecialchars($row['nick']) ?></span>
+                                        <?php else: ?><span class="w-2 h-2 rounded-full <?= $isBanned ? 'bg-red-900' : ($isExcluded ? 'bg-gray-800 border border-gray-600' : 'bg-gray-600') ?> shrink-0"></span><span class="<?= $isBanned ? 'text-gray-500 line-through' : ($isExcluded ? 'text-gray-600' : 'text-gray-400') ?>"><?= htmlspecialchars($row['nick']) ?></span><?php endif; ?>
                                     </div>
-                                    <?php if ($delta != 0 && !$isBanned): ?><span class="text-[10px] font-bold <?= $delta > 0 ? 'text-green-500' : 'text-red-500' ?>"><?= $delta > 0 ? '▲' : '▼' ?> <?= abs($delta) ?></span><?php endif; ?>
+                                    <?php if ($delta != 0 && !$isBanned && !$isExcluded): ?><span class="text-[10px] font-bold <?= $delta > 0 ? 'text-green-500' : 'text-red-500' ?>"><?= $delta > 0 ? '▲' : '▼' ?> <?= abs($delta) ?></span><?php endif; ?>
                                 </div>
                             </li>
                             <?php endforeach; ?>
