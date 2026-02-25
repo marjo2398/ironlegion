@@ -124,6 +124,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rebuild_all_queues($pdo);
         header("Location: $self?view=database&msg=deleted"); exit;
     }
+    // EXCLUSIONS
+    if (isset($_POST['update_exclusions_submit'])) {
+        $itemId = $_POST['item_id'];
+        $excludedPlayers = $_POST['excluded_players'] ?? [];
+        try {
+            $pdo->beginTransaction();
+            $pdo->prepare("DELETE FROM item_exclusions WHERE item_id = ?")->execute([$itemId]);
+            $stmtEx = $pdo->prepare("INSERT INTO item_exclusions (item_id, player_id) VALUES (?, ?)");
+            foreach ($excludedPlayers as $pid) { $stmtEx->execute([$itemId, $pid]); }
+            $pdo->commit(); rebuild_all_queues($pdo); header("Location: $self?view=database&msg=updated"); exit;
+        } catch (Exception $e) { $pdo->rollBack(); $error = $e->getMessage(); }
+    }
 }
 
 $players = $pdo->query("SELECT id, nick, is_loot_banned, is_out FROM players ORDER BY nick ASC")->fetchAll();
@@ -230,22 +242,32 @@ require_once 'partials/header.php';
                             $playerMap=[]; foreach($players as $p)$playerMap[$p['id']]=$p; 
                             $presentIds=$_SESSION['new_session']['present']; 
                             $assignedCounts=[]; 
-                            $selectablePlayers = []; 
-                            foreach($presentIds as $pid) { 
-                                if (isset($playerMap[$pid]) && !$playerMap[$pid]['is_loot_banned']) $selectablePlayers[$pid] = $playerMap[$pid]['nick']; 
-                            } 
                         ?>
                         <div class="space-y-4 mb-6" id="loot-list-container">
                             <?php foreach($_SESSION['new_session']['drops'] as $idx => $itemId): 
                                 $it=$itemMap[$itemId]; 
-                                $qStmt=$pdo->prepare("SELECT q.player_id,p.nick,p.is_loot_banned FROM item_queue_positions q JOIN players p ON p.id=q.player_id WHERE q.item_id=? ORDER BY q.position ASC LIMIT 20"); 
+                                // NEW: Fetch is_excluded logic
+                                $qStmt=$pdo->prepare("SELECT q.player_id,p.nick,p.is_loot_banned, q.is_excluded FROM item_queue_positions q JOIN players p ON p.id=q.player_id WHERE q.item_id=? ORDER BY q.position ASC LIMIT 20");
                                 $qStmt->execute([$itemId]); 
                                 $queueTop=$qStmt->fetchAll(); 
+
+                                // Get Exclusions for Select Dropdown Filtering
+                                $exStmt = $pdo->prepare("SELECT player_id FROM item_exclusions WHERE item_id = ?");
+                                $exStmt->execute([$itemId]);
+                                $excludedMap = array_flip($exStmt->fetchAll(PDO::FETCH_COLUMN));
+
+                                // Build Selectable Players (Filtered)
+                                $selectablePlayers = [];
+                                foreach($presentIds as $pid) {
+                                    if (isset($playerMap[$pid]) && !$playerMap[$pid]['is_loot_banned'] && !isset($excludedMap[$pid]))
+                                        $selectablePlayers[$pid] = $playerMap[$pid]['nick'];
+                                }
+
                                 $suggestedWinnerId=null; 
                                 foreach($queueTop as $qp){ 
                                     $pid=$qp['player_id']; 
                                     $cnt=$assignedCounts[$itemId][$pid]??0; 
-                                    if(in_array($pid,$presentIds) && $cnt==0 && !$qp['is_loot_banned']){ 
+                                    if(in_array($pid,$presentIds) && $cnt==0 && !$qp['is_loot_banned'] && !$qp['is_excluded']){
                                         $suggestedWinnerId=$pid; 
                                         $assignedCounts[$itemId][$pid]=1; 
                                         break; 
@@ -268,9 +290,12 @@ require_once 'partials/header.php';
                                 <div class="w-full md:w-1/2 bg-black/30 p-2 rounded border border-gray-700/50 text-xs">
                                     <strong class="text-gray-500 uppercase block mb-1">Queue Preview:</strong>
                                     <div class="space-y-1 max-h-24 overflow-y-auto pr-1">
-                                        <?php foreach($queueTop as $qp): $isPresent=in_array($qp['player_id'],$presentIds); $isBan = $qp['is_loot_banned']; ?>
-                                            <div class="flex justify-between <?= $isBan ? 'opacity-50' : '' ?>">
-                                                <span><?= $qp['position'] ?>. <span class="<?= $isPresent && !$isBan ?'text-green-400 font-bold': ($isBan ? 'text-gray-500 line-through' : 'text-gray-500') ?>"><?= htmlspecialchars($qp['nick']) ?></span><?= $isBan ? '<span class="text-[10px] text-red-500 ml-1">[BAN]</span>' : '' ?></span>
+                                        <?php foreach($queueTop as $qp): $isPresent=in_array($qp['player_id'],$presentIds); $isBan = $qp['is_loot_banned']; $isExcl = $qp['is_excluded']; ?>
+                                            <div class="flex justify-between <?= ($isBan || $isExcl) ? 'opacity-50' : '' ?>">
+                                                <span><?= $qp['position'] ?>. <span class="<?= $isPresent && !$isBan && !$isExcl ?'text-green-400 font-bold': (($isBan || $isExcl) ? 'text-gray-500 italic line-through' : 'text-gray-500') ?>"><?= htmlspecialchars($qp['nick']) ?></span>
+                                                <?= $isBan ? '<span class="text-[10px] text-red-500 ml-1">[BAN]</span>' : '' ?>
+                                                <?= $isExcl ? '<span class="text-[10px] text-gray-500 ml-1">[EXCL]</span>' : '' ?>
+                                                </span>
                                                 <?= !$isPresent?'<span class="text-red-500 font-bold">ABSENT</span>':'<span class="text-green-500">●</span>' ?>
                                             </div>
                                         <?php endforeach; ?>
@@ -351,7 +376,8 @@ require_once 'partials/header.php';
                             <tr>
                                 <td class="py-2 px-2 w-10 text-center"><?= $i['icon'] ? '<img src="icons/'.$i['icon'].'" class="w-6 h-6 object-contain mx-auto">' : '' ?></td>
                                 <td class="py-2 px-2 font-bold text-gray-300"><?= htmlspecialchars($i['name']) ?></td>
-                                <td class="py-2 px-2 text-right">
+                                <td class="py-2 px-2 text-right flex justify-end gap-1 items-center">
+                                    <a href="<?= $self ?>?view=exclusions&item_id=<?= $i['id'] ?>" class="bg-gray-700 hover:bg-gray-600 text-yellow-500 hover:text-yellow-400 text-[10px] font-bold px-2 py-1.5 rounded border border-gray-600" title="Zarządzaj Wykluczeniami">⛔</a>
                                     <form method="POST" onsubmit="return confirm('<?= t('confirm_del_item') ?>')">
                                         <input type="hidden" name="delete_item_id" value="<?= $i['id'] ?>">
                                         <button type="submit" class="bg-red-900/20 hover:bg-red-900 text-red-500 hover:text-white text-[10px] font-bold px-2 py-1 rounded border border-red-900">DEL</button>
@@ -493,6 +519,31 @@ require_once 'partials/header.php';
             </div>
             <?php endif; 
         break; 
+
+        case 'exclusions':
+            $iid = $_GET['item_id'] ?? 0;
+            $itemInfo = $pdo->prepare("SELECT * FROM items WHERE id = ?"); $itemInfo->execute([$iid]); $item = $itemInfo->fetch();
+            if(!$item) { echo "Item not found"; break; }
+            $currEx = $pdo->prepare("SELECT player_id FROM item_exclusions WHERE item_id = ?"); $currEx->execute([$iid]); $excludedMap = array_flip($currEx->fetchAll(PDO::FETCH_COLUMN));
+            $allPlayers = $pdo->query("SELECT id, nick, is_out FROM players ORDER BY nick ASC")->fetchAll();
+            ?>
+            <div class="max-w-4xl mx-auto bg-gray-800 border border-gray-700 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-4 mb-4"><h2 class="text-2xl font-bold text-yellow-500 flex items-center gap-2">⛔ Wykluczenia: <?= htmlspecialchars($item['name']) ?> <?php if($item['icon']): ?><img src="icons/<?= $item['icon'] ?>" class="w-8 h-8 object-contain"><?php endif; ?></h2><a href="<?= $self ?>?view=database" class="text-gray-400 hover:text-white">← Powrót</a></div>
+                <form method="POST"><input type="hidden" name="item_id" value="<?= $iid ?>">
+                    <div class="mb-6"><p class="text-gray-400 text-sm mb-2">Zaznacz graczy, którzy mają być <strong>wykluczeni</strong> z kolejki po ten przedmiot.</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-[60vh] overflow-y-auto bg-gray-900/50 p-2 rounded border border-gray-700">
+                            <?php foreach($allPlayers as $p): $isEx = isset($excludedMap[$p['id']]); ?>
+                            <label class="flex items-center gap-2 p-1 hover:bg-gray-700 rounded cursor-pointer border border-transparent <?= $isEx ? 'bg-red-900/20 border-red-900/50' : '' ?>">
+                                <input type="checkbox" name="excluded_players[]" value="<?= $p['id'] ?>" class="accent-red-500" <?= $isEx ? 'checked' : '' ?>><span class="text-sm <?= $p['is_out'] ? 'text-gray-600 italic' : ($isEx ? 'text-red-300 font-bold' : 'text-gray-300') ?>"><?= htmlspecialchars($p['nick']) ?></span>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-4"><a href="<?= $self ?>?view=database" class="bg-gray-700 text-gray-300 font-bold py-2 px-6 rounded">Anuluj</a><button type="submit" name="update_exclusions_submit" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded shadow-lg">Zapisz Wykluczenia</button></div>
+                </form>
+            </div>
+            <?php
+        break;
         
         endswitch; ?>
     </main>
